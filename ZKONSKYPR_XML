@@ -1,0 +1,55 @@
+*&---------------------------------------------------------------------*
+*& Report ZKONSKYPR_XML
+*&---------------------------------------------------------------------*
+*& Author: Konstantinos Kyprianidis
+*& Date: 16/11/2021
+*& Create XML Test
+*&---------------------------------------------------------------------*
+REPORT zkonskypr_xml.
+
+DATA: it_sbooks   TYPE STANDARD TABLE OF zxml_st,
+      praveen_xml TYPE xstring.
+
+PARAMETERS p_file TYPE string DEFAULT 'C:\custom\test.xml' LOWER CASE.
+*parameter: matnr type mara-matnr.
+
+START-OF-SELECTION.
+
+* Fetch the data from database to internal table.
+
+  SELECT scarr~carrid sbook~bookid sbook~passname
+    FROM scarr INNER JOIN sbook ON scarr~carrid = sbook~carrid
+    INTO TABLE it_sbooks
+  UP TO 100 ROWS.
+
+* Call the transformation Program name which we created in TCODE XSLT_TOOL.
+
+  CALL TRANSFORMATION zxml_transformation
+  SOURCE sbook_table = it_sbooks
+  RESULT XML praveen_xml.
+
+* Call function for displaying the XML file on to list output.
+
+  CALL METHOD cl_abap_browser=>show_xml
+    EXPORTING
+*     xml_string  = praveen_xml
+      xml_xstring = praveen_xml
+*     title       = 'TEST'
+      size        = cl_abap_browser=>medium "Windows size not font.
+      modal       = abap_true
+*     printing    = ABAP_FALSE
+*     buttons     = NAVIGATE_OFF
+*     format      = CL_ABAP_BROWSER=>LANDSCAPE
+*     position    = CL_ABAP_BROWSER=>TOPLEFT
+*     context_menu = ABAP_FALSE
+*     container   =
+*     check_xml   = ABAP_TRUE
+*     dialog      = ABAP_TRUE
+    .
+
+*  CALL the METHOD to download the XML DATA as File ON the file SYSTEM.
+
+  CALL METHOD cl_salv_data_services=>download_xml_to_file
+    EXPORTING
+      filename = p_file
+      xcontent = praveen_xml.
